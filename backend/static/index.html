@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Command Centre</title>
+    <style>
+        :root {
+            font-family: Arial, sans-serif;
+            color: #e8eef8;
+            background: #101827;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #101827;
+        }
+
+        header {
+            padding: 24px;
+            background: #172338;
+            border-bottom: 1px solid #2b3b52;
+        }
+
+        header h1 { margin: 0 0 8px; font-size: 26px; }
+        header p { margin: 0; color: #a9bad0; }
+
+        main {
+            max-width: 1200px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button, select {
+            border: 1px solid #3a506d;
+            background: #22344c;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card, section {
+            background: #19263a;
+            border: 1px solid #2b3b52;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card h3 {
+            color: #a9bad0;
+            font-size: 14px;
+            margin: 0 0 12px;
+        }
+
+        .value { font-size: 25px; font-weight: bold; }
+        .muted { color: #a9bad0; font-size: 13px; }
+
+        .status {
+            display: inline-block;
+            background: #164e3b;
+            color: #86efac;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        section { margin-bottom: 20px; }
+        section h2 { margin-top: 0; font-size: 19px; }
+
+        .log-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .log-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #2b3b52;
+            overflow-wrap: anywhere;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .log-list li:last-child { border-bottom: 0; }
+
+        .error { color: #fca5a5; }
+        .empty { color: #a9bad0; padding: 10px 0; }
+        footer { text-align: center; color: #8799b1; padding: 20px; }
+
+        @media (max-width: 600px) {
+            main { padding: 14px; }
+            header { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Smart City Command Centre</h1>
+    <p>Central monitoring dashboard for six city departments</p>
+</header>
+
+<main>
+    <div class="toolbar">
+        <span id="connection"><span class="status">Connecting...</span></span>
+        <div>
+            <button id="refresh">Refresh now</button>
+            <select id="department">
+                <option value="traffic">Traffic</option>
+                <option value="water">Water</option>
+                <option value="power">Power</option>
+                <option value="waste">Waste</option>
+                <option value="safety">Safety</option>
+                <option value="healthcare">Healthcare</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>API Health</h3>
+            <div class="value" id="health">Checking...</div>
+        </div>
+        <div class="card">
+            <h3>Departments</h3>
+            <div class="value" id="departments">—</div>
+        </div>
+        <div class="card">
+            <h3>Total Department Logs</h3>
+            <div class="value" id="totalLogs">—</div>
+        </div>
+        <div class="card">
+            <h3>Administrator Alerts</h3>
+            <div class="value" id="alertsCount">—</div>
+        </div>
+    </div>
+
+    <section>
+        <h2>System Status</h2>
+        <div id="system" class="muted">Loading system information...</div>
+    </section>
+
+    <section>
+        <h2>Department Logs</h2>
+        <p id="logSummary" class="muted">Loading logs...</p>
+        <ul id="logs" class="log-list"></ul>
+    </section>
+
+    <section>
+        <h2>Administrator Alerts</h2>
+        <ul id="alerts" class="log-list"></ul>
+    </section>
+
+    <p id="lastUpdated" class="muted">Last updated: —</p>
+</main>
+
+<footer>Smart City Command Centre · Live API Dashboard</footer>
+
+<script>
+    const $ = id => document.getElementById(id);
+
+    async function getJSON(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error(`Request failed (${response.status}): ${path}`);
+        }
+        return response.json();
+    }
+
+    function showList(element, items, emptyMessage) {
+        element.replaceChildren();
+
+        if (!items || items.length === 0) {
+            const li = document.createElement("li");
+            li.className = "empty";
+            li.textContent = emptyMessage;
+            element.appendChild(li);
+            return;
+        }
+
+        items.slice().reverse().forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            element.appendChild(li);
+        });
+    }
+
+    async function refreshDashboard() {
+        $("connection").textContent = "Connecting...";
+
+        try {
+            const [health, system, overview, alerts] = await Promise.all([
+                getJSON("/api/v1/health"),
+                getJSON("/api/v1/system-status"),
+                getJSON("/api/v1/overview"),
+                getJSON("/api/v1/alerts?limit=50")
+            ]);
+
+            $("health").textContent = health.status;
+            $("departments").textContent = overview.departments;
+            $("totalLogs").textContent = overview.total_department_logs;
+            $("alertsCount").textContent = overview.administrator_alerts;
+
+            $("system").textContent =
+                `Host: ${system.hostname} · OS: ${system.operating_system} ` +
+                `${system.os_release} · Python: ${system.python_version} · ` +
+                `CPUs: ${system.cpu_count} · Disk used: ${system.disk_used_gb} GB / ` +
+                `${system.disk_total_gb} GB · Free: ${system.disk_free_gb} GB`;
+
+            showList(
+                $("alerts"),
+                alerts.alerts,
+                "No administrator alerts recorded."
+            );
+
+            $("connection").innerHTML =
+                '<span class="status">API connected</span>';
+
+            await refreshDepartmentLogs();
+            $("lastUpdated").textContent =
+                "Last updated: " + new Date().toLocaleString();
+
+        } catch (error) {
+            $("connection").textContent = "API connection failed";
+            $("connection").className = "error";
+            console.error(error);
+        }
+    }
+
+    async function refreshDepartmentLogs() {
+        const department = $("department").value;
+
+        try {
+            const data = await getJSON(
+                `/api/v1/logs/${encodeURIComponent(department)}?limit=50`
+            );
+
+            $("logSummary").textContent =
+                `${data.department}: ${data.returned} displayed of ` +
+                `${data.total} total entries`;
+
+            showList(
+                $("logs"),
+                data.logs,
+                "No log entries available."
+            );
+        } catch (error) {
+            $("logSummary").textContent = "Unable to load department logs.";
+            showList($("logs"), [], error.message);
+        }
+    }
+
+    $("refresh").addEventListener("click", refreshDashboard);
+    $("department").addEventListener("change", refreshDepartmentLogs);
+
+    refreshDashboard();
+    setInterval(refreshDashboard, 15000);
+</script>
+</body>
+</html>

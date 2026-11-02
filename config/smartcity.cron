@@ -1,0 +1,7 @@
+# Smart City Command Centre - Automated Tasks
+
+# Collect department logs and monitor system resources every 5 minutes
+*/5 * * * * /home/girish/smart-city-command-centre/bin/Logging\ \&\ Monitoring.sh >> /home/girish/smart-city-command-centre/logs/cron_execution.log 2>&1
+
+# Create archival and backup files daily at 2:00 AM
+0 2 * * * /home/girish/smart-city-command-centre/bin/Archival\ \&\ Backup.sh >> /home/girish/smart-city-command-centre/logs/cron_execution.log 2>&1

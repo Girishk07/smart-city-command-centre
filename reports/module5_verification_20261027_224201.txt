@@ -1,0 +1,35 @@
+SMART CITY COMMAND CENTRE
+MODULE 5 — FASTAPI AND WEB DASHBOARD VERIFICATION
+================================================
+Date: Tue Oct 27 10:42:01 PM IST 2026
+
+API HEALTH:
+{"status":"healthy","service":"Smart City Command Centre API","timestamp":"2026-10-27T22:42:01.128011"}
+
+SYSTEM STATUS:
+{"hostname":"girish-VirtualBox","operating_system":"Linux","os_release":"7.0.0-38-generic","python_version":"3.14.4","cpu_count":2,"disk_total_gb":29.36,"disk_used_gb":12.52,"disk_free_gb":15.33,"timestamp":"2026-10-27T22:42:01.137216"}
+
+PROJECT OVERVIEW:
+{"departments":6,"department_log_counts":{"traffic":16,"water":17,"power":17,"waste":17,"safety":17,"healthcare":17},"total_department_logs":101,"administrator_alerts":0,"timestamp":"2026-10-27T22:42:01.145989"}
+
+ADMINISTRATOR ALERTS:
+{"source":"/home/girish/smart-city-command-centre/logs/administrator_alerts.log","total":0,"returned":0,"alerts":[],"message":"No administrator alerts recorded"}
+
+HTTP ENDPOINT CHECKS:
+/                              HTTP 200
+/docs                          HTTP 200
+/api/v1/health                 HTTP 200
+/api/v1/system-status          HTTP 200
+/api/v1/departments            HTTP 200
+/api/v1/overview               HTTP 200
+/api/v1/alerts                 HTTP 200
+
+Department log counts:
+traffic      16
+water        17
+power        17
+waste        17
+safety       17
+healthcare   17
+
+NOTE: This report records endpoint checks, not a comprehensive security audit.
